@@ -1081,6 +1081,43 @@ rm server/google_token.pickle
 python gmail_service.py  # Triggers fresh OAuth with all scopes
 ```
 
+#### 🔧 **Critical OAuth Fix: Missing Refresh Token Fields**
+**Problem**: Token missing required fields for refresh operations
+
+**Error Message**:
+```
+The credentials do not contain the necessary fields need to refresh the access token.
+You must specify refresh_token, token_uri, client_id, and client_secret.
+```
+
+**Root Cause**: OAuth token created without proper refresh token configuration
+
+**Solution**: Complete token recreation with proper OAuth flow:
+```bash
+# 1. Remove all existing token files
+rm server/src/google_token.pickle
+rm server/google_token.pickle
+
+# 2. Create fresh token with all required fields
+cd server/src
+python -c "from googel_auth_manger import get_credentials; get_credentials()"
+
+# 3. Copy token to both locations
+cp google_token.pickle ../google_token.pickle
+
+# 4. Verify both services work
+python -c "
+from gmail_service import get_gmail_service
+from calendar_service import get_calendar_service
+
+gmail = get_gmail_service()
+calendar = get_calendar_service()
+
+print('Gmail:', 'SUCCESS' if gmail.get_user_profile().get('success') else 'FAILED')
+print('Calendar:', 'SUCCESS' if calendar.get_calendar_info().get('success') else 'FAILED')
+"
+```
+
 ### 📁 **File Structure & Dependencies**
 
 ```
@@ -1211,6 +1248,288 @@ TOKEN_FILE = os.path.join(os.path.dirname(__file__), "google_token.pickle")
 - [ ] Calendar service test passes
 - [ ] Appointment function creates both email and calendar event
 - [ ] Voice agent runs without authentication errors
+
+## 🌐 Google Services Integration Guidelines
+
+### Overview
+This section provides comprehensive guidelines for integrating Google services (Gmail, Calendar, Drive, etc.) based on lessons learned during OAuth implementation and troubleshooting.
+
+### 🚀 **Quick Integration Checklist**
+
+When adding any new Google service, follow this proven methodology:
+
+#### 1. **Scope Planning** (Before Coding)
+```python
+# Always plan ALL scopes upfront - adding later causes token conflicts
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.send',         # Existing
+    'https://www.googleapis.com/auth/gmail.readonly',     # Existing
+    'https://www.googleapis.com/auth/calendar',           # Existing
+    'https://www.googleapis.com/auth/calendar.events',    # Existing
+    'https://www.googleapis.com/auth/drive.file',         # NEW: If adding Drive
+    'https://www.googleapis.com/auth/sheets',             # NEW: If adding Sheets
+]
+```
+
+#### 2. **Service Creation Pattern**
+```python
+# Use this template for any new Google service
+class NewGoogleService:
+    def __init__(self):
+        self.service = None
+        self._initialize_service()
+
+    def _initialize_service(self):
+        """Standard initialization pattern"""
+        try:
+            creds = get_credentials()  # Uses central auth manager
+            self.service = build('servicename', 'version', credentials=creds)
+
+            # Test the service immediately
+            test_result = self.service.about().get().execute()  # Adjust per service
+            logger.info(f"Service initialized: {test_result.get('name', 'Unknown')}")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize service: {str(e)}")
+            raise
+
+    def test_connection(self) -> Dict[str, Any]:
+        """Always include a test method"""
+        try:
+            # Service-specific test call
+            result = self.service.about().get().execute()
+            return {'success': True, 'data': result}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+```
+
+#### 3. **Token Management Protocol**
+```bash
+# CRITICAL: When adding new scopes, ALWAYS follow this sequence:
+
+# Step 1: Update SCOPES in googel_auth_manger.py
+# Step 2: Delete ALL existing tokens
+rm server/google_token.pickle server/src/google_token.pickle
+
+# Step 3: Create fresh token with ALL scopes
+cd server/src
+python -c "from googel_auth_manger import get_credentials; get_credentials()"
+
+# Step 4: Copy to both locations
+cp google_token.pickle ../google_token.pickle
+
+# Step 5: Test ALL services
+python -c "
+from gmail_service import get_gmail_service
+from calendar_service import get_calendar_service
+# Add tests for new services here
+
+print('All services tested successfully')
+"
+```
+
+### 🔧 **Common Google Services Integration Patterns**
+
+#### **Gmail API Integration**
+```python
+# Proven pattern for email operations
+def send_email(to: str, subject: str, body: str, is_html: bool = False):
+    try:
+        service = build('gmail', 'v1', credentials=get_credentials())
+
+        message = MIMEText(body, 'html' if is_html else 'plain')
+        message['to'] = to
+        message['subject'] = subject
+
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        result = service.users().messages().send(
+            userId='me',
+            body={'raw': raw_message}
+        ).execute()
+
+        return {'success': True, 'message_id': result['id']}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+```
+
+#### **Google Calendar API Integration**
+```python
+# Proven pattern for calendar operations
+def create_calendar_event(summary: str, start_time: datetime, end_time: datetime):
+    try:
+        service = build('calendar', 'v3', credentials=get_credentials())
+
+        event = {
+            'summary': summary,
+            'start': {
+                'dateTime': start_time.isoformat(),
+                'timeZone': 'Asia/Kolkata',  # Always specify timezone
+            },
+            'end': {
+                'dateTime': end_time.isoformat(),
+                'timeZone': 'Asia/Kolkata',
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'email', 'minutes': 24 * 60},
+                    {'method': 'popup', 'minutes': 10},
+                ],
+            },
+        }
+
+        result = service.events().insert(calendarId='primary', body=event).execute()
+        return {'success': True, 'event_id': result['id']}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+```
+
+#### **Google Drive API Integration**
+```python
+# Template for Drive integration (if needed)
+def upload_to_drive(file_path: str, folder_id: str = None):
+    try:
+        service = build('drive', 'v3', credentials=get_credentials())
+
+        file_metadata = {
+            'name': os.path.basename(file_path),
+            'parents': [folder_id] if folder_id else []
+        }
+
+        media = MediaFileUpload(file_path)
+
+        result = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id,name,webViewLink'
+        ).execute()
+
+        return {'success': True, 'file_id': result['id'], 'link': result['webViewLink']}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+```
+
+### ⚠️ **Critical Don'ts for Google Services**
+
+#### ❌ **Never Do These**
+1. **Create separate OAuth tokens for different services**
+   ```python
+   # BAD: Multiple tokens
+   gmail_creds = get_gmail_credentials()  # ❌ Wrong approach
+   calendar_creds = get_calendar_credentials()  # ❌ Wrong approach
+
+   # GOOD: Single token with all scopes
+   creds = get_credentials()  # ✅ Correct approach
+   ```
+
+2. **Add scopes to existing tokens**
+   ```python
+   # BAD: Trying to add scopes to existing token
+   # This will fail with "insufficient scopes" error
+
+   # GOOD: Delete token and recreate with all scopes
+   ```
+
+3. **Ignore timezone handling**
+   ```python
+   # BAD: No timezone specified
+   'start': {'dateTime': start_time.isoformat()}  # ❌ Timezone issues
+
+   # GOOD: Always specify timezone
+   'start': {'dateTime': start_time.isoformat(), 'timeZone': 'Asia/Kolkata'}  # ✅
+   ```
+
+4. **Skip error handling**
+   ```python
+   # BAD: No error handling
+   service.events().insert(calendarId='primary', body=event).execute()  # ❌
+
+   # GOOD: Comprehensive error handling
+   try:
+       result = service.events().insert(calendarId='primary', body=event).execute()
+       return {'success': True, 'data': result}
+   except HttpError as e:
+       return {'success': False, 'error': f'API Error: {e}'}
+   ```
+
+### 🧪 **Testing Strategy for Google Services**
+
+#### **Service Health Check Pattern**
+```python
+def test_all_google_services():
+    """Test all Google services to ensure proper integration"""
+    results = {}
+
+    # Test Gmail
+    try:
+        gmail = get_gmail_service()
+        results['gmail'] = gmail.get_user_profile().get('success', False)
+    except Exception as e:
+        results['gmail'] = f"Error: {e}"
+
+    # Test Calendar
+    try:
+        calendar = get_calendar_service()
+        results['calendar'] = calendar.get_calendar_info().get('success', False)
+    except Exception as e:
+        results['calendar'] = f"Error: {e}"
+
+    # Add more services as needed
+
+    return results
+```
+
+#### **Integration Test for Function Calling**
+```python
+def test_appointment_integration():
+    """Test complete appointment flow with both email and calendar"""
+    try:
+        # Test email sending
+        email_result = send_appointment_email_test()
+
+        # Test calendar creation
+        calendar_result = create_calendar_event_test()
+
+        # Test both together
+        both_success = email_result.get('success') and calendar_result.get('success')
+
+        return {
+            'email': email_result.get('success'),
+            'calendar': calendar_result.get('success'),
+            'integration': both_success
+        }
+    except Exception as e:
+        return {'error': str(e)}
+```
+
+### 📋 **Google Services Development Checklist**
+
+Before deploying any Google service integration:
+
+- [ ] **Scope Planning**: All required scopes identified upfront
+- [ ] **Single Token**: One OAuth token for all services
+- [ ] **Error Handling**: Comprehensive try/catch blocks
+- [ ] **Timezone Handling**: Explicit timezone specification
+- [ ] **Test Methods**: Health check for each service
+- [ ] **Integration Tests**: Cross-service functionality tested
+- [ ] **Token Backup**: Token files in both server locations
+- [ ] **Documentation**: Service patterns documented
+- [ ] **Rate Limiting**: API rate limits considered
+- [ ] **Security**: No credentials in code or git
+
+### 🎯 **Future Google Service Additions**
+
+When adding new Google services (Sheets, Drive, Photos, etc.):
+
+1. **Plan scopes** before writing any code
+2. **Update `googel_auth_manger.py`** with new scopes
+3. **Delete all tokens** and recreate fresh
+4. **Follow service creation pattern** shown above
+5. **Add comprehensive tests** for the new service
+6. **Update this documentation** with new patterns
+
+This methodology ensures smooth integration without the OAuth issues we encountered during development.
 
 ## Future Enhancements
 
