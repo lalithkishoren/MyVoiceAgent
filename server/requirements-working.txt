@@ -1,0 +1,26 @@
+# Working requirements - tested and verified
+# Install these in order to avoid conflicts
+
+# Core web framework
+fastapi[standard]>=0.115.0
+uvicorn[standard]>=0.24.0
+
+# WebSocket and HTTP
+websockets>=13.0
+aiohttp>=3.9.0
+python-dotenv>=1.0.0
+
+# AI Service providers - Use older stable google-generativeai instead of google-genai
+google-generativeai>=0.7.0
+google-ai-generativelanguage>=0.6.0
+
+# Logging and utilities
+structlog>=23.2.0
+aiofiles>=23.2.1
+
+# Pipecat AI - install last to avoid conflicts
+pipecat-ai>=0.0.50
+
+# Optional production dependencies
+gunicorn>=21.2.0
+prometheus-client>=0.19.0
