@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import useWebRTCClient from '../hooks/useWebRTCClient';
 
 const VoiceChat = () => {
-  const signalingServerUrl = 'ws://127.0.0.1:8091/ws'; // Hardcoded for now
+  const signalingServerUrl = 'ws://127.0.0.1:8090/ws'; // Match server default port
   const audioRef = useRef(null);
 
   const {

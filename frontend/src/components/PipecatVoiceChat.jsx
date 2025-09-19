@@ -91,7 +91,7 @@ const PipecatVoiceChat = () => {
 
       // Connect to our Pipecat server with selected voice
       await pcClient.connect({
-        wsUrl: `ws://127.0.0.1:8091/ws?voice_id=${selectedVoice}`, // Pass voice selection
+        wsUrl: `ws://127.0.0.1:8090/ws?voice_id=${selectedVoice}`, // Pass voice selection
       });
 
       console.log('Connected to Pipecat voice server');

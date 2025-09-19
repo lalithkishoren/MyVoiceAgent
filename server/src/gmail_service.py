@@ -37,15 +37,16 @@ class EmailMessage:
 class GmailService:
     """Gmail API service for sending emails"""
 
-    def __init__(self):
+    def __init__(self, credentials=None):
         self.service = None
         self.user_email = None
+        self.credentials = credentials
         self._initialize_service()
 
     def _initialize_service(self):
         """Initialize the Gmail API service with authentication"""
         try:
-            creds = get_credentials()
+            creds = self.credentials if self.credentials else get_credentials()
             self.service = build('gmail', 'v1', credentials=creds)
 
             # Get user profile to retrieve email address

@@ -1,26 +1,41 @@
 # Pipecat Voice Agent Project
 
 ## Overview
-A complete voice agent application built with React frontend and Python backend, implementing Pipecat AI framework with Gemini Live for real-time speech-to-speech conversations. Features voice selection, natural interruption handling, high-quality 24kHz audio processing, and **full Twilio phone integration** for receiving and making phone calls.
+**Enterprise-grade voice agent for Renova Hospitals** with React frontend and Python backend using Pipecat AI + Gemini Live for real-time speech-to-speech conversations. Features multi-language support (English/Hindi/Telugu), advanced appointment management with calendar integration, comprehensive Google Services integration, and persistent data storage with analytics.
 
-## Current Status
-✅ **Voice Pipeline**: Full Gemini Live speech-to-speech working
-✅ **Voice Selection**: 4 natural voices (Puck, Charon, Kore, Fenrir)
-✅ **Audio Quality**: 24kHz sample rate for natural voice output
-✅ **Interruption Handling**: Natural conversation flow with proper interruption
-✅ **Greeting System**: Automatic welcome message on connection
-✅ **WebSocket Transport**: FastAPIWebsocketTransport with ProtobufFrameSerializer
-✅ **Windows Compatibility**: Proper signal handling for Windows environment
-✅ **Twilio Phone Integration**: Complete phone-to-AI conversation system
-✅ **TwilioFrameSerializer**: Proper mulaw ↔ PCM audio format conversion
-✅ **Auto Hang-up**: Automatic call termination via Twilio API
-✅ **Email Integration**: Automatic appointment confirmation emails via Gmail API
-✅ **Calendar Integration**: Automatic appointment scheduling in Google Calendar with timezone handling
-✅ **Function Calling**: Gemini Live function calling for external actions
-✅ **Appointment Booking**: Full end-to-end appointment booking with email + calendar integration
-✅ **OAuth2 Authentication**: Robust Google API authentication with proper token management
-✅ **Date Interpretation**: Correct handling of relative dates ("tomorrow", "next week") with current date context
-✅ **Multi-Service Integration**: Single OAuth token supporting both Gmail and Calendar APIs
+**Key Capabilities**: 4 voice options, 24kHz audio, Twilio phone integration, real-time calendar availability checking, automated email confirmations, appointment cancellation, patient data management, dual storage (CSV + Google Sheets), and mandatory call logging with analytics.
+
+## Features
+
+### Core Voice Agent
+✅ **Gemini Live Pipeline**: Single API for STT+LLM+TTS (lower latency than multi-service)
+✅ **Voice Selection**: 4 voices (Puck, Charon, Kore, Fenrir) with 24kHz natural audio
+✅ **Multi-Language Support**: English, Hindi, Telugu with native pronunciation
+✅ **Twilio Integration**: Phone calls with auto hang-up and mulaw conversion
+✅ **Cross-Platform**: Windows/macOS/Linux with proper signal handling
+
+### Enhanced Appointment System
+✅ **Calendar Availability Checking**: Real-time conflict detection with alternative suggestions
+✅ **Advanced Appointment Booking**: Email + Calendar integration with confirmation
+✅ **Appointment Cancellation**: Verification-based cancellation with calendar cleanup
+✅ **Patient Information Management**: Persistent storage and retrieval
+✅ **Business Process Flow**: Proper step-by-step appointment booking with availability validation
+
+### Google Services Integration (Complete Suite)
+✅ **Gmail API**: Automated appointment confirmation emails
+✅ **Calendar API**: Real-time scheduling and availability checking
+✅ **Google Sheets**: Persistent data storage for call logs and patient records
+✅ **Google Drive**: Organized folder structure for data management
+✅ **Single OAuth Token**: Unified authentication across all Google services
+
+### Data Management & Analytics
+✅ **Dual Storage System**: CSV (local) + Google Sheets (cloud) for redundancy
+✅ **Mandatory Call Logging**: Automatic logging at end of every call (silent)
+✅ **Patient Database**: Comprehensive patient record management
+✅ **Call Analytics**: Duration, language, resolution tracking
+✅ **Multi-Language Call Handling**: Automatic language detection and response
+✅ **Customer Detection**: Automatic identification of new/existing/returning customers
+✅ **Session-Aware Function Calling**: Real-time call record updates during conversations
 
 ## Project Structure
 ```
@@ -42,12 +57,16 @@ MyVoiceAgent/
 │   └── .env                  # Frontend configuration
 └── server/                   # Python backend server
     ├── src/
-    │   ├── pipecat_server.py # PRODUCTION: Gemini Live with voice selection and email (PORT 8091)
-    │   ├── appointment_functions.py # Email + Calendar function calling for appointment confirmations
+    │   ├── pipecat_server.py # PRODUCTION: Enhanced Gemini Live with full Google integration (PORT 8090)
+    │   ├── enhanced_appointment_functions.py # Complete appointment system with availability, booking, cancellation
     │   ├── gmail_service.py  # Gmail API service for sending emails
-    │   ├── calendar_service.py # Google Calendar API service for scheduling appointments
+    │   ├── calendar_service.py # Google Calendar API service with availability checking
+    │   ├── google_sheets_service.py # Google Sheets API for call logs and patient data
+    │   ├── call_logger.py    # CSV-based call logging system
     │   ├── gmail_routes.py   # FastAPI routes for Gmail functionality
-    │   ├── googel_auth_manger.py # Google OAuth2 authentication manager (Gmail + Calendar scopes)
+    │   ├── googel_auth_manger.py # Google OAuth2 authentication manager (all Google APIs)
+    │   ├── test_sheets_setup.py # Google Sheets integration testing script
+    │   ├── test_google_drive.py # Google Drive API testing script
     │   ├── twilio_pipecat_integrated.py # TWILIO: Phone integration server (PORT 8091)
     │   ├── audio_bridge.py   # Twilio audio format bridge (mulaw ↔ PCM)
     │   ├── main.py           # Original complex server (deprecated)
@@ -68,1498 +87,472 @@ MyVoiceAgent/
     └── .env.example         # Configuration template
 ```
 
-## Technology Stack
+## Tech Stack
+**Frontend**: React 18.2.0 + Pipecat SDK + ProtobufFrameSerializer
+**Backend**: Python 3.8+ + FastAPI + GeminiMultimodalLiveLLMService
+**Audio**: 24kHz output (critical for natural voice), 16kHz input, SileroVAD
+**Integration**: Gmail API + Calendar API + Twilio Voice + TwilioFrameSerializer
 
-### Frontend
-- **React 18.2.0** - UI framework
-- **Pipecat JavaScript SDK** - Official client with ProtobufFrameSerializer
-- **Voice Selection UI** - Dropdown for 4 Gemini Live voices
-- **24kHz Audio Processing** - High-quality audio playback
-- **Real-time Interruption** - Natural conversation flow
-- **Modern CSS** - Glassmorphism design, gradient backgrounds, responsive layout
+## Endpoints
+**Web (8090)**: `ws://localhost:8090/ws?voice_id=Charon` | `GET /health`
+**Phone (8091)**: `POST /` (Twilio webhook) | `wss://ngrok-url/ws` (Media Stream)
+**Available Voices**: Puck, Charon, Kore, Fenrir
 
-### Backend
-- **Python 3.8+** - Server runtime
-- **FastAPI + WebSockets** - Async web framework
-- **GeminiMultimodalLiveLLMService** - Direct Gemini Live integration
-- **FastAPIWebsocketTransport** - Official Pipecat transport
-- **ProtobufFrameSerializer** - Efficient binary protocol
-- **SileroVADAnalyzer** - Voice activity detection
-- **Windows Signal Handling** - Cross-platform compatibility
+## Enhanced API Endpoints
 
-## Key Features
+### Core Endpoints
+- **GET /** - Server info with active sessions count
+- **GET /health** - Health check with detailed status including Google Sheets integration
+- **WebSocket /ws?voice_id=Charon** - Voice chat with selected voice
 
-### Voice Processing
-- **Gemini Live Integration** - Single API for speech-to-text, language model, and text-to-speech
-- **4 Voice Options** - Puck (energetic), Charon (authoritative), Kore (friendly), Fenrir (confident)
-- **24kHz Audio Quality** - High sample rate for natural, non-robotic voice output
-- **Natural Speech Instructions** - AI trained to use contractions, fillers, and emotional inflection
-- **Automatic Greeting** - "Hi! How are you? I'm your AI Assistant..." on connection
-- **Real-time Interruption** - Natural conversation flow with proper turn-taking
+### Data Endpoints
+- **GET /call-logs** - Recent call logs from both CSV and Google Sheets
+- **GET /patients** - Patient database from local memory
+- **GET /patient/{phone}** - Specific patient information
+- **GET /gmail/test** - Gmail API connection test
 
-### Session Management
-- **Concurrent Sessions** - Up to 50 simultaneous voice sessions
-- **Session Timeout** - 30-minute automatic cleanup
-- **Auto-reconnection** - Client-side reconnection with exponential backoff
-- **Resource Management** - Automatic cleanup of expired sessions
+### Function Calling Capabilities (Voice-Triggered)
+- **check_appointment_availability(date, time)** - Real-time calendar conflict checking
+- **book_appointment(name, email, phone, date, time, doctor, department)** - Complete booking with email + calendar
+- **cancel_appointment(name, email, phone, date, time, doctor)** - Verified cancellation with cleanup
+- **log_call_information()** - Manual call logging (automatic at session end)
 
-### Audio Quality & Best Practices
-- **24kHz Sample Rate** - **CRITICAL**: Use 24kHz output for natural voice (fixes robotic speech)
-- **16kHz Input** - Standard microphone input rate for speech recognition
-- **ProtobufFrameSerializer** - Efficient binary protocol for real-time audio
-- **High-Quality Settings** - Enhanced audio processing with AGC, noise suppression
-- **Natural Speech System Instructions** - Detailed prompts for human-like speech patterns
+## Google Sheets Integration
 
-### Production Ready
-- **Docker Support** - Multi-stage builds for development and production
-- **Health Monitoring** - Health check endpoints and metrics collection
-- **Error Handling** - Comprehensive error recovery and logging
-- **Security** - CORS configuration, non-root Docker user, API validation
+### Required Structure
+**VoiceAgent** folder in Google Drive containing:
 
-## API Endpoints
+**PatientData** spreadsheet ("Patients" sheet):
+```
+Phone | Name | Email | Last_Visit | Preferred_Doctor | Department | Language | Customer_Type | Notes | Created | Updated
+```
 
-### WebSocket (Port 8090) - PRODUCTION
-- `ws://localhost:8090/ws` - **Pipecat voice chat endpoint**
-- `ws://localhost:8090/ws?voice_id=Charon` - **Voice selection parameter**
-- **Available Voices**: Puck, Charon, Kore, Fenrir
-- **Features**: Automatic greeting, 24kHz audio, natural interruption
+**CallLog** spreadsheet ("Calls" sheet):
+```
+Call_ID | Timestamp | Phone | Name | Duration_Seconds | Language | Call_Type | Department | Doctor | Status | Resolution | Notes
+```
 
-### HTTP API (Port 8090)
-- `GET /` - Server information and status
-- `GET /health` - Health check with connection details
+### Data Flow
+1. **Patient Data**: Voice agent stores patient info in both local memory (session) and Google Sheets (persistent)
+2. **Call Logging**: Every call automatically logged to both CSV (local backup) and Google Sheets (cloud storage)
+3. **Analytics**: Call duration, language usage, resolution status tracking
+4. **Retrieval**: Patient history available for returning customers
 
-### Twilio Phone Integration (Port 8091) - PRODUCTION
-- `POST /` - **Twilio webhook for incoming calls**
-- `wss://your-ngrok-url/ws` - **Twilio Media Stream WebSocket**
-- `GET /health` - Health check with Twilio configuration status
-- `GET /twilio/calls` - Active phone calls information
-- **Features**: Phone-to-AI conversations, automatic hang-up, mulaw audio conversion
-
-### Legacy Endpoints (Port 8080)
-- `ws://localhost:8080/ws` - Simple server (deprecated)
-- `GET /sessions` - Active sessions information
-- `GET /metrics` - Performance and usage metrics
-
-## Configuration
-
-### Environment Variables
+## Environment Variables
 ```bash
 # Required
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Twilio Integration (Phone Calls)
+# Twilio (Phone Calls)
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_PHONE_NUMBER=+1xxxxxxxxxx
 NGROK_URL=https://your-ngrok-url.ngrok-free.app
 
-# Server Settings
+# Server
 HOST=0.0.0.0
 PORT=8091
-LOG_LEVEL=INFO
-
-# Session Management
 MAX_SESSIONS=50
 SESSION_TIMEOUT=1800
-CLEANUP_INTERVAL=300
-
-# Optional
-DEBUG=false
-CORS_ORIGINS=*
-ENABLE_METRICS=true
 ```
 
-### Frontend Configuration
+## Quick Start
 ```bash
-# WebSocket URL for signaling server
-REACT_APP_SIGNALING_URL=ws://localhost:8080/ws
-```
+# Frontend
+cd frontend && npm install && npm start  # → http://localhost:3000
 
-## Installation & Setup
-
-### Frontend Setup
-```bash
-cd frontend
-npm install
-# Installs: @pipecat-ai/client-js, @pipecat-ai/websocket-transport
-npm start
-# Available at http://localhost:3000
-```
-
-### Backend Setup (PRODUCTION)
-```bash
-cd server
-
-# Create virtual environment (recommended)
-python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # macOS/Linux
-
-# Install Pipecat with required dependencies
-pip install --upgrade pip setuptools wheel
+# Backend
+cd server && python -m venv venv && venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env  # Edit with GEMINI_API_KEY
 
-# Set up environment
-cp .env.example .env
-# Edit .env with your GEMINI_API_KEY
+# Run Servers
+python src/pipecat_server.py      # Web interface (port 8090)
+python src/twilio_pipecat_integrated.py  # Phone integration (port 8091)
 ```
 
-### Start Server (PRODUCTION)
+## Testing & Verification
+
+### Google Services Setup Test
 ```bash
-# RECOMMENDED: Pipecat server with voice selection
-python src/pipecat_server.py
-# WebSocket: ws://localhost:8090/ws
-# HTTP API: http://localhost:8090
-
-# TWILIO: Phone integration server
-python src/twilio_pipecat_integrated.py
-# WebSocket: wss://your-ngrok-url.ngrok-free.app/ws
-# HTTP API: https://your-ngrok-url.ngrok-free.app/
-# Phone webhook: POST https://your-ngrok-url.ngrok-free.app/
-
-# Alternative: Use venv directly (if activation issues)
-venv\Scripts\python.exe src\pipecat_server.py
-venv\Scripts\python.exe src\twilio_pipecat_integrated.py
+cd server/src
+python test_google_drive.py    # Verify Drive/Sheets API access
+python test_sheets_setup.py    # Test Google Sheets integration with sample data
 ```
 
-### Alternative Installation Options
+### API Endpoint Testing
 ```bash
-# Option 1: Original dependencies (may have issues)
-pip install -r requirements.txt
+# Health check
+curl http://localhost:8090/health
 
-# Option 2: Simplified installation
-pip install -r requirements-simple.txt
+# Call logs (both CSV and Google Sheets)
+curl http://localhost:8090/call-logs
 
-# Option 3: Minimal installation (without pipecat)
-pip install -r requirements-minimal.txt
+# Patient database
+curl http://localhost:8090/patients
+
+# Gmail API test
+curl http://localhost:8090/gmail/test
 ```
+
+### Voice Agent Testing Scenarios
+
+**Basic Appointment Booking**:
+1. "Hi, I need to book an appointment"
+2. Provide: Name, phone, email, preferred date/time
+3. Verify: Email sent + Calendar event created + Data logged
+
+**Availability Checking**:
+1. "I want an appointment for today at 2 PM"
+2. System checks calendar conflicts
+3. Suggests alternatives if busy
+
+**Appointment Cancellation**:
+1. "I need to cancel my appointment"
+2. Provide: Name, date, time, doctor
+3. Verify: Calendar event removed
+
+**Multi-Language Support**:
+1. Speak in Hindi/Telugu
+2. Verify: Bot responds in same language
+3. Check: Function parameters still in English
+
+**Call Logging Verification**:
+1. Complete any call interaction
+2. Check: CSV file updated (`server/call_logs.csv`)
+3. Check: Google Sheets CallLog updated
+4. Verify: Patient data in Google Sheets PatientData
 
 ## WebSocket Protocol
-
-### Client Messages
-```json
-// Start session
-{
-  "type": "start-session",
-  "sessionId": "optional-uuid",
-  "systemPrompt": "optional-custom-prompt",
-  "offer": { /* WebRTC offer */ }
-}
-
-// WebRTC signaling
-{
-  "type": "offer",
-  "offer": { /* SDP offer */ },
-  "sessionId": "session-uuid"
-}
-
-{
-  "type": "answer",
-  "answer": { /* SDP answer */ },
-  "sessionId": "session-uuid"
-}
-
-{
-  "type": "ice-candidate",
-  "candidate": { /* ICE candidate */ },
-  "sessionId": "session-uuid"
-}
-
-// End session
-{
-  "type": "end-session",
-  "sessionId": "session-uuid"
-}
-
-// Keep-alive
-{
-  "type": "ping"
-}
-```
-
-### Server Responses
-```json
-// Session created
-{
-  "type": "session-created",
-  "sessionId": "session-uuid",
-  "timestamp": "2024-01-01T00:00:00Z"
-}
-
-// WebRTC responses
-{
-  "type": "answer",
-  "answer": { /* SDP answer */ },
-  "sessionId": "session-uuid"
-}
-
-// Session ended
-{
-  "type": "session-ended",
-  "sessionId": "session-uuid",
-  "timestamp": "2024-01-01T00:00:00Z"
-}
-
-// Errors
-{
-  "type": "error",
-  "message": "Error description",
-  "timestamp": "2024-01-01T00:00:00Z"
-}
-
-// Keep-alive response
-{
-  "type": "pong",
-  "timestamp": "2024-01-01T00:00:00Z"
-}
-```
+**Client**: `start-session`, `offer`, `answer`, `ice-candidate`, `end-session`, `ping`
+**Server**: `session-created`, `answer`, `session-ended`, `error`, `pong`
 
 ## Architecture
+**Frontend**: useWebRTCClient → VoiceChat → WebSocket + WebRTC
+**Backend**: FastAPI → Session Manager → Gemini Live → Audio Pipeline
+**Pipeline**: `Audio → Gemini Live (STT+LLM+TTS) → Audio` (single service, lower latency)
 
-### Frontend Architecture
-```
-useWebRTCClient Hook
-├── WebSocket Connection Management
-├── WebRTC Peer Connection Setup
-├── SDP Offer/Answer Handling
-├── ICE Candidate Processing
-├── Audio Stream Management
-├── Session Lifecycle Management
-└── Auto-reconnection Logic
+## 📧 Function Calling & Appointment Booking
 
-VoiceChat Component
-├── UI State Management
-├── Audio Controls
-├── Connection Status Display
-├── Error Handling
-└── User Feedback
-```
+Voice agent uses Gemini Live function calling for appointment booking with automatic email + calendar creation.
 
-### Backend Architecture
-```
-FastAPI Server (main.py)
-├── HTTP API Endpoints
-├── WebSocket Server Integration
-├── Health Monitoring
-├── Metrics Collection
-└── Graceful Shutdown
+**Flow**: Patient speaks → AI collects details → Calls `send_appointment_email()` → Gmail API sends confirmation
 
-Session Manager
-├── Session Creation/Deletion
-├── Resource Management
-├── Timeout Handling
-├── Background Cleanup
-└── Concurrent Session Limits
+**Files**: `appointment_functions.py` (schemas), `gmail_service.py` (API), `pipecat_server.py` (integration)
 
-Voice Session (Gemini Live)
-├── Gemini Live API Integration
-├── WebRTC Transport Management
-├── Audio Processing Pipeline
-├── Session State Management
-└── Error Recovery
+**Key**: ✅ Use function calling (NOT text interception) - only method that works with Gemini Live
 
-WebSocket Handler
-├── Message Routing
-├── Client Connection Management
-├── Protocol Validation
-├── Error Handling
-└── Session Association
-```
+## 🎯 Function Calling Pattern (Critical!)
 
-## Voice Pipeline
+**⚠️ ALWAYS use Function Calling - NEVER text interception with Gemini Live!**
 
-### Traditional Multi-Service Pipeline (Previous)
-```
-Audio Input → Deepgram STT → OpenAI LLM → Cartesia TTS → Audio Output
-```
-
-### Current Gemini Live Pipeline
-```
-Audio Input → Gemini Live (STT + LLM + TTS) → Audio Output
-```
-
-### Benefits of Gemini Live
-- **Lower Latency** - Single service handles entire pipeline
-- **Better Integration** - Optimized for voice conversations
-- **Simplified Architecture** - One API instead of three
-- **Cost Efficiency** - Single service billing
-- **Real-time Processing** - Native audio-to-audio capabilities
-
-## Development Workflow
-
-### Local Development
-1. Start backend server: `python src/main.py`
-2. Start frontend: `npm start`
-3. Open browser to `http://localhost:3000`
-4. Test voice conversations
-
-### Docker Development
-```bash
-# Build and run server
-cd server
-docker build -t pipecat-voice .
-docker run -p 8080:8080 -p 8081:8081 pipecat-voice
-
-# Environment variables
-docker run -p 8080:8080 -p 8081:8081 \
-  -e GEMINI_API_KEY=your_key_here \
-  pipecat-voice
-```
-
-## 📧 Email Integration & Function Calling
-
-### Overview
-Complete appointment booking system with automatic email confirmation using Gemini Live function calling. Patients can book appointments via voice and automatically receive professional HTML confirmation emails.
-
-### Features
-- ✅ **Gemini Live Function Calling** - AI calls external functions during conversation
-- ✅ **Automatic Email Sending** - Confirmation emails sent after appointment booking
-- ✅ **Gmail API Integration** - Uses existing Google OAuth2 authentication
-- ✅ **Beautiful HTML Emails** - Professional appointment confirmation emails
-- ✅ **Context Aggregation** - Proper function calling support with OpenAILLMContext
-- ✅ **Error Handling** - Robust error handling and logging
-
-### Function Calling Architecture
-
-#### Email Function Schema
-```python
-send_appointment_email_function = FunctionSchema(
-    name="send_appointment_email",
-    description="Send appointment confirmation email to patient after booking is confirmed",
-    properties={
-        "patient_name": {"type": "string"},
-        "email": {"type": "string"},
-        "phone": {"type": "string"},
-        "appointment_date": {"type": "string"},
-        "appointment_time": {"type": "string"},
-        "doctor_name": {"type": "string"},
-        "department": {"type": "string"}
-    },
-    required=["patient_name", "email", "appointment_date", "appointment_time", "doctor_name", "department"]
-)
-```
-
-#### Pipeline Architecture
-```python
-# Function calling enabled pipeline
-pipeline = Pipeline([
-    transport.input(),              # Audio input from client
-    context_aggregator.user(),      # User context aggregation
-    llm,                           # Gemini Live with function calling
-    transport.output(),            # Audio output to client
-    context_aggregator.assistant() # Assistant context aggregation
-])
-```
-
-### How It Works
-
-1. **Patient speaks** to voice agent about booking appointment
-2. **AI collects details** (name, email, phone, date, time, doctor preference)
-3. **AI calls function** `send_appointment_email()` with collected parameters
-4. **Function executes** and sends beautiful HTML email via Gmail API
-5. **AI confirms** to patient: "Perfect! Your appointment is confirmed and I've sent you a confirmation email."
-
-### File Structure
-```
-appointment_functions.py         # Function calling implementation
-├── send_appointment_email_function    # Function schema definition
-├── appointment_tools                  # ToolsSchema for Gemini Live
-├── create_appointment_email_html()    # HTML email template generation
-├── handle_send_appointment_email()    # Async function handler
-└── Professional HTML email template   # Renova Hospitals branding
-
-gmail_service.py                # Gmail API service (existing)
-├── GmailService                # Main service class
-├── send_simple_email()         # Email sending functionality
-└── OAuth2 authentication      # Google API integration
-
-pipecat_server.py              # Main server with function calling
-├── GeminiMultimodalLiveLLMService    # With tools parameter
-├── OpenAILLMContext                  # Context for function calling
-├── context_aggregator                # Function calling support
-└── llm.register_function()           # Function handler registration
-```
-
-### Benefits of Function Calling Approach
-- ✅ **No text interception needed** - Works with Gemini Live's audio-to-audio architecture
-- ✅ **AI decides when to act** - Natural conversation flow
-- ✅ **Scalable architecture** - Easy to add more functions (calendar, SMS, etc.)
-- ✅ **Maintains audio quality** - Full Gemini Live 24kHz audio processing
-- ✅ **Error resilient** - Proper error handling and user feedback
-
-## 🎯 **CRITICAL DEVELOPMENT METHODOLOGY**
-
-### **For Future External Actions with Gemini Live:**
-
-**⚠️ ALWAYS use Function Calling - NEVER use text interception!**
-
-#### **Why Text Interception Fails:**
-- **Gemini Live** = Audio-to-Audio pipeline (STT + LLM + TTS internally)
-- **No TextFrames** are emitted for processors to intercept
-- **Frame processors never see text** - they only see audio frames
-- **100+ failed attempts** proved this approach doesn't work
-
-#### **Why Function Calling Works:**
-- **Built into Gemini Live** - AI natively calls functions during conversation
-- **Natural decision making** - AI decides when conditions are met
-- **Reliable execution** - Functions execute with proper error handling
-- **Scalable design** - Easy to add calendar, SMS, database operations, etc.
-
-#### **Function Calling Implementation Pattern:**
+**Why**: Gemini Live = audio-to-audio pipeline, no TextFrames emitted
 
 ```python
-# 1. Define Function Schema
-from pipecat.adapters.schemas.function_schema import FunctionSchema
-from pipecat.adapters.schemas.tools_schema import ToolsSchema
-
-function_schema = FunctionSchema(
-    name="your_function_name",
-    description="What this function does",
-    properties={
-        "param1": {"type": "string", "description": "Parameter description"},
-        "param2": {"type": "string", "description": "Parameter description"}
-    },
-    required=["param1", "param2"]
-)
-
+# 1. Define schema + tools
+function_schema = FunctionSchema(name="your_function", properties={...})
 tools = ToolsSchema(standard_tools=[function_schema])
 
-# 2. Create Function Handler
-async def handle_your_function(params: FunctionCallParams):
-    try:
-        args = params.arguments
-        # Your logic here
-        result = await your_external_action(args)
-        await params.result_callback(result)
-    except Exception as e:
-        await params.result_callback({"success": False, "error": str(e)})
+# 2. Configure LLM with tools
+llm = GeminiMultimodalLiveLLMService(tools=tools)
+llm.register_function("your_function", handle_your_function)
 
-# 3. Configure Gemini Live with Function Calling
-llm = GeminiMultimodalLiveLLMService(
-    api_key=os.getenv("GEMINI_API_KEY"),
-    tools=tools,  # CRITICAL: Add tools parameter
-    system_instruction="""
-    CRITICAL: When [specific condition], immediately call your_function_name.
-    You have access to: your_function_name - description of what it does
-    """
-)
-
-# 4. Register Function Handler
-llm.register_function("your_function_name", handle_your_function)
-
-# 5. CRITICAL: Add Context Aggregation (Required for Function Calling)
-context = OpenAILLMContext(
-    messages=[{
-        "role": "system",
-        "content": "SAME system instruction emphasizing function calling"
-    }],
-    tools=tools  # CRITICAL: Include tools in context
-)
+# 3. CRITICAL: Add context aggregation (required!)
+context = OpenAILLMContext(tools=tools)
 context_aggregator = llm.create_context_aggregator(context)
 
-# 6. Pipeline with Context Aggregation
+# 4. Pipeline with aggregators
 pipeline = Pipeline([
     transport.input(),
     context_aggregator.user(),      # REQUIRED
-    llm,                           # Function calling enabled
+    llm,
     transport.output(),
-    context_aggregator.assistant() # REQUIRED
+    context_aggregator.assistant()  # REQUIRED
 ])
 ```
 
-#### **Critical Requirements:**
-1. **✅ Tools parameter** in GeminiMultimodalLiveLLMService
-2. **✅ Function registration** with llm.register_function()
-3. **✅ OpenAILLMContext** with tools for function calling support
-4. **✅ Context aggregators** in pipeline (user() and assistant())
-5. **✅ Consistent system instructions** between service and context
-6. **✅ Clear function calling instructions** in system prompt
+**Must Have**: tools param + function registration + context aggregators + consistent system instructions
 
-#### **Common Pitfalls to Avoid:**
-- ❌ **Don't use frame processors** for text interception with Gemini Live
-- ❌ **Don't forget context aggregators** - function calls will fail
-- ❌ **Don't have conflicting system instructions** - context overrides service
-- ❌ **Don't skip tools parameter** in GeminiMultimodalLiveLLMService
-- ❌ **Don't use different prompts** in service vs context
+## 🔄 Business Process Flow (Critical!)
 
-#### **Future Expansion Examples:**
-```python
-# Calendar Integration
-calendar_function = FunctionSchema(
-    name="add_to_calendar",
-    description="Add appointment to Google Calendar",
-    properties={"date": {"type": "string"}, "time": {"type": "string"}}
-)
+**Proper Appointment Booking Process:**
 
-# SMS Integration
-sms_function = FunctionSchema(
-    name="send_sms_reminder",
-    description="Send SMS appointment reminder",
-    properties={"phone": {"type": "string"}, "message": {"type": "string"}}
-)
-
-# Database Operations
-database_function = FunctionSchema(
-    name="update_patient_record",
-    description="Update patient information in database",
-    properties={"patient_id": {"type": "string"}, "data": {"type": "object"}}
-)
+```
+Customer Call → Data Collection → Availability Check → Booking Confirmation
 ```
 
-**This methodology enables unlimited external actions while maintaining Gemini Live's superior audio quality and natural conversation flow.**
+**Step-by-Step Implementation:**
 
-### Email Integration Status
-- ✅ **Web Interface** (`pipecat_server.py` - PORT 8091) - Full email integration with function calling
-- ✅ **Phone Interface** (`twilio_pipecat_integrated.py` - PORT 8091) - Full email integration with function calling
+1. **Customer Contact**: Patient calls or connects via web interface
+2. **Information Gathering**:
+   - Patient name
+   - Phone number (triggers automatic customer detection)
+   - Email address
+   - Appointment preferences (date, time, department, doctor)
 
-Both interfaces now support complete appointment booking with automatic email confirmation!
+3. **Customer Detection Logic**:
+   ```python
+   # Check local session memory first
+   if phone in patient_database:
+       customer_type = "existing"
+   # Then check Google Sheets for historical data
+   elif global_sheets_service.get_patient_by_phone(phone):
+       customer_type = "returning"
+   else:
+       customer_type = "new"
+   ```
+
+4. **CRITICAL: Two-Step Booking Process**:
+   ```
+   Step 1: check_appointment_availability(date, time)
+   ├── Available: Proceed to Step 2
+   └── Not Available: Present alternatives, repeat check
+
+   Step 2: book_appointment(patient_data)
+   ├── Double-check availability (safety measure)
+   ├── Send email confirmation (Gmail API)
+   ├── Add to hospital calendar (Calendar API)
+   └── Log complete call record (Google Sheets)
+   ```
+
+**Why Two-Step Process?**
+- Prevents double-booking conflicts
+- Provides real-time availability checking
+- Allows graceful handling of scheduling conflicts
+- Ensures data consistency across systems
+
+**Function Call Sequence:**
+```python
+# CORRECT sequence
+1. check_appointment_availability()  # Verify slot is free
+2. book_appointment()               # Complete booking process
+
+# INCORRECT (old method)
+1. send_appointment_email()         # Direct booking without check
+```
 
 ## 📞 Twilio Phone Integration
 
-### Overview
-Complete phone-to-AI conversation system using Twilio Voice API with Media Streams. Callers can speak directly with the AI assistant through regular phone calls.
+**Setup**:
+1. `ngrok http 8091` → Copy HTTPS URL
+2. Add Twilio vars to `.env` (SID, TOKEN, PHONE, NGROK_URL)
+3. `python src/twilio_pipecat_integrated.py`
+4. Twilio Console: Set webhook to `https://ngrok-url/`
 
-### Features
-- ✅ **Incoming Calls** - Receive phone calls on Twilio number
-- ✅ **Real-time Audio** - Bidirectional audio streaming via WebSocket
-- ✅ **Auto Format Conversion** - Automatic mulaw ↔ PCM conversion at 8kHz
-- ✅ **TwilioFrameSerializer** - Official Pipecat Twilio integration
-- ✅ **Auto Hang-up** - Automatic call termination when conversation ends
-- ✅ **Hospital Assistant** - Configured as "Archana" from Renova Hospitals
-- ✅ **Phone Appointment Booking** - Full appointment booking via phone calls
-- ✅ **Email Confirmations** - Automatic email confirmations for phone bookings
-- ✅ **Function Calling** - Gemini Live function calling over phone calls
+**Flow**: Call → Webhook → TwiML → Media Stream → TwilioFrameSerializer → Gemini Live
 
-### Quick Setup Guide
+**Files**: `twilio_pipecat_integrated.py` (main), `audio_bridge.py` (mulaw conversion)
 
-#### 1. Twilio Configuration
-```bash
-# Add to .env file
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_PHONE_NUMBER=+1xxxxxxxxxx
-NGROK_URL=https://your-ngrok-url.ngrok-free.app
-```
-
-#### 2. Start ngrok Tunnel
-```bash
-# Terminal 1: Start ngrok on port 8091
-ngrok http 8091
-# Copy the https URL (e.g., https://abc123.ngrok-free.app)
-```
-
-#### 3. Start Twilio Server
-```bash
-# Terminal 2: Start the integrated server
-python src/twilio_pipecat_integrated.py
-# Server runs on port 8091
-```
-
-#### 4. Configure Twilio Webhook
-1. Go to **Twilio Console** → **Phone Numbers** → **Manage** → **Active Numbers**
-2. Click your phone number (+1xxxxxxxxxx)
-3. Set webhook URL: `https://your-ngrok-url.ngrok-free.app/`
-4. HTTP method: `POST`
-5. Save configuration
-
-#### 5. Test Phone Calls
-- Call +1xxxxxxxxxx
-- Hear: "Hello! Connecting you to Archana, your Renova Hospital AI assistant."
-- Start conversation with the AI
-
-### Technical Implementation
-
-#### TwiML Response (Webhook)
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Say voice="Polly.Joanna">Hello! Connecting you to Archana, your Renova Hospital AI assistant.</Say>
-    <Connect>
-        <Stream url="wss://your-ngrok-url.ngrok-free.app/ws"></Stream>
-    </Connect>
-    <Pause length="40"/>
-</Response>
-```
-
-#### TwilioFrameSerializer Configuration
-```python
-serializer = TwilioFrameSerializer(
-    stream_sid=stream_sid,           # From Twilio WebSocket data
-    call_sid=call_sid,               # From Twilio WebSocket data
-    account_sid=TWILIO_ACCOUNT_SID,  # For authentication & auto hang-up
-    auth_token=TWILIO_AUTH_TOKEN,    # For authentication & auto hang-up
-)
-```
-
-#### Audio Processing Pipeline
-```
-Phone Call → Twilio (mulaw 8kHz) → WebSocket → TwilioFrameSerializer
-→ Pipecat Pipeline → Gemini Live → Audio Response → Twilio → Phone
-```
-
-### Twilio Integration Flow
-
-1. **Incoming Call** → Twilio receives call on +1xxxxxxxxxx
-2. **Webhook Request** → `POST /` to your server
-3. **TwiML Response** → Server returns XML with WebSocket URL
-4. **Media Stream** → Twilio connects to `wss://your-url/ws`
-5. **Audio Processing** → TwilioFrameSerializer handles format conversion
-6. **AI Conversation** → Gemini Live processes speech and responds
-7. **Auto Hang-up** → Call terminates when conversation ends
-
-### File Structure
-```
-twilio_pipecat_integrated.py    # Main integration server
-├── @app.post("/")              # Webhook handler (returns TwiML)
-├── @app.websocket("/ws")       # Media Stream handler
-├── run_pipecat_bot()          # Pipeline with TwilioFrameSerializer
-├── GeminiMultimodalLiveLLMService # AI processing
-└── FastAPIWebsocketTransport   # Audio transport
-
-audio_bridge.py                 # Audio format utilities (legacy)
-├── TwilioAudioBridge          # mulaw ↔ PCM conversion
-├── mulaw_to_pcm()             # Audio decoding
-└── pcm_to_mulaw()             # Audio encoding
-```
-
-### Troubleshooting Twilio
-
-#### Common Issues
-- **"Application Error"** → Check webhook URL includes `/` endpoint
-- **No Audio** → Verify TwilioFrameSerializer has both stream_sid and call_sid
-- **Connection Drops** → Check ngrok tunnel is active and accessible
-- **Robotic Voice** → Ensure Gemini Live uses natural speech instructions
-
-#### Debug Commands
-```bash
-# Test webhook endpoint
-curl -X POST https://your-ngrok-url.ngrok-free.app/
-
-# Check Twilio server health
-curl https://your-ngrok-url.ngrok-free.app/health
-
-# View active calls
-curl https://your-ngrok-url.ngrok-free.app/twilio/calls
-
-# Test ngrok tunnel
-curl https://your-ngrok-url.ngrok-free.app/
-```
-
-#### Logs to Check
-```
-# Successful call flow:
-INFO: Incoming call: CAxxxx from +1234567890 to +1xxxxxxxxxx, status: ringing
-INFO: WebSocket connection accepted
-INFO: Call data received: {'event': 'start', 'start': {'streamSid': 'MZxxxx'}}
-INFO: Starting bot for stream: MZxxxx, call: CAxxxx
-INFO: Starting Pipecat pipeline for Twilio call
-DEBUG: Connecting to Gemini service
-```
-
-### Production Deployment
-
-#### ngrok Alternatives for Production
-```bash
-# Option 1: Deploy to cloud with public IP
-# Configure firewall to allow port 8091
-
-# Option 2: Use reverse proxy (nginx)
-# Configure SSL certificate and domain
-
-# Option 3: Use cloud services (AWS/Google Cloud)
-# Deploy with load balancer and auto-scaling
-```
-
-#### Webhook Security
-```python
-# Validate Twilio requests (recommended for production)
-from twilio.request_validator import RequestValidator
-
-validator = RequestValidator(TWILIO_AUTH_TOKEN)
-is_valid = validator.validate(request_url, post_data, signature)
-```
+**Debug**:
+- "Application Error" → Check webhook URL has `/`
+- No audio → Verify TwilioFrameSerializer has stream_sid + call_sid
+- `curl -X POST https://ngrok-url/` to test webhook
 
 ## Troubleshooting
 
-### Common Issues & Solutions
+**Voice Quality**:
+- Robotic voice → Use `audio_out_sample_rate=24000` (CRITICAL!)
+- No greeting → Queue `LLMRunFrame()` on connection
+- Poor audio → Use ProtobufFrameSerializer (not JSON)
 
-#### Voice Quality Issues
-- **❌ Robotic Voice**: Check audio sample rate - MUST use 24kHz output for natural speech
-- **❌ No Greeting**: Ensure `LLMRunFrame()` is queued on client connection
-- **❌ Poor Audio**: Verify ProtobufFrameSerializer is used (not JSON)
-- **✅ Solution**: Use `audio_out_sample_rate=24000` in FastAPIWebsocketParams
+**Connection**:
+- DecodeError → Use official Pipecat SDK
+- Voice selection → Check URL param `?voice_id=Charon`
+- Windows issues → `PipelineRunner(handle_sigint=False)`
 
-#### Connection & Transport Issues
-- **❌ DecodeError**: Frontend sending wrong format - use official Pipecat SDK
-- **❌ CancelFrame Warnings**: Normal for interruption handling - can be ignored
-- **❌ Port 8090 in use**: Kill existing servers or use different port
-- **✅ Solution**: Use FastAPIWebsocketTransport with ProtobufFrameSerializer
+**Debug**: `curl http://localhost:8090/health` | Check logs with `python src/pipecat_server.py`
 
-#### Frontend Issues
-- **❌ Voice Selection Not Working**: Check URL query parameter `?voice_id=Charon`
-- **❌ Audio Not Playing**: Verify playerSampleRate matches server (24kHz)
-- **❌ SDK Errors**: Install @pipecat-ai/client-js and @pipecat-ai/websocket-transport
-- **✅ Solution**: Use PipecatVoiceChat component (not SimplePipecatClient)
+## 🎯 Critical Best Practices
 
-#### Backend Issues
-- **❌ Windows Signal Handling**: Use `PipelineRunner(handle_sigint=False)`
-- **❌ Context Aggregator Error**: Don't use with GeminiMultimodalLiveLLMService
-- **❌ Invalid Voice Config**: Use only voice_id parameter
-- **❌ SileroVADAnalyzer Params**: Use default constructor `SileroVADAnalyzer()`
-- **✅ Solution**: Use pipecat_server.py (production-ready)
+**Audio Quality** (Most Important!):
+```python
+# ✅ CORRECT: 24kHz output for natural voice (fixes robotic speech!)
+audio_out_sample_rate=24000, audio_in_sample_rate=16000
 
-### Debug Commands
-```bash
-# Check production server health
-curl http://localhost:8090/health
+# ✅ CORRECT: Voice selection
+llm = GeminiMultimodalLiveLLMService(voice_id="Charon")  # Puck/Charon/Kore/Fenrir
 
-# Check server status
-curl http://localhost:8090/
+# ✅ CORRECT: Transport
+FastAPIWebsocketTransport(params=FastAPIWebsocketParams(
+    vad_analyzer=SileroVADAnalyzer(),
+    serializer=ProtobufFrameSerializer(),
+    audio_out_sample_rate=24000  # CRITICAL
+))
 
-# Test voice selection
-# Connect to ws://localhost:8090/ws?voice_id=Kore
-
-# Check logs
-python src/pipecat_server.py  # View detailed logs
+# ✅ CORRECT: Windows compatibility
+runner = PipelineRunner(handle_sigint=False)
 ```
 
-## 🎯 Critical Best Practices (LESSONS LEARNED)
-
-### Audio Quality (Most Important!)
+**Date Context for Appointments**:
 ```python
-# ✅ CORRECT: 24kHz output for natural voice
-audio_out_sample_rate=24000,  # Fixes robotic voice!
-audio_in_sample_rate=16000,   # Standard input
-
-# ❌ WRONG: 16kHz output = robotic voice
-audio_out_sample_rate=16000,  # Sounds robotic
-```
-
-### Voice Selection Implementation
-```python
-# ✅ CORRECT: Simple voice_id parameter
-llm = GeminiMultimodalLiveLLMService(
-    api_key=os.getenv("GEMINI_API_KEY"),
-    voice_id=voice_id,  # Puck, Charon, Kore, Fenrir
-    model="models/gemini-2.0-flash-exp"
-)
-
-# ❌ WRONG: Custom voice_config causes errors
-voice_config={"style": "natural"}  # Not supported
-```
-
-### Natural Speech Instructions
-```python
-system_instruction="""
-IMPORTANT SPEECH GUIDELINES:
-- Speak like a real human with natural rhythm and flow
-- Use contractions (I'm, you're, can't, won't)
-- Add natural filler words occasionally (um, well, you know)
-- Use emotional inflection - sound excited, concerned, or thoughtful
-- Take natural pauses between sentences and thoughts
-- Avoid monotone delivery - use pitch variation
-"""
-```
-
-### Transport Configuration
-```python
-# ✅ CORRECT: Official transport with proper serializer
-transport = FastAPIWebsocketTransport(
-    websocket=websocket,
-    params=FastAPIWebsocketParams(
-        audio_in_enabled=True,
-        audio_out_enabled=True,
-        add_wav_header=False,
-        vad_analyzer=SileroVADAnalyzer(),  # Default constructor only
-        serializer=ProtobufFrameSerializer(),  # No extra params
-        audio_out_sample_rate=24000,  # CRITICAL FOR QUALITY
-    )
-)
-```
-
-### 🔧 Function Calling for External Actions (Critical!)
-
-**The ONLY way to perform external actions with Gemini Live**
-
-#### ✅ **CORRECT: Function Calling Methodology**
-```python
-# 1. Define function schema
-send_email_function = FunctionSchema(
-    name="send_appointment_email",
-    description="Send appointment confirmation email",
-    properties={
-        "patient_name": {"type": "string", "description": "Full name of patient"},
-        "email": {"type": "string", "description": "Patient's email address"},
-        "appointment_date": {"type": "string", "description": "Date in YYYY-MM-DD format"},
-        # ... other properties
-    },
-    required=["patient_name", "email", "appointment_date", "appointment_time"]
-)
-
-# 2. Create tools schema
-appointment_tools = ToolsSchema(standard_tools=[send_email_function])
-
-# 3. Add tools to Gemini Live service
-llm = GeminiMultimodalLiveLLMService(
-    api_key=GEMINI_API_KEY,
-    tools=appointment_tools,  # CRITICAL: Add tools here
-    system_instruction="You have access to send_appointment_email function..."
-)
-
-# 4. Register function handler
-llm.register_function("send_appointment_email", handle_send_appointment_email)
-
-# 5. Create context with tools (required for function calling)
-context = OpenAILLMContext(
-    messages=[{"role": "system", "content": "..."}],
-    tools=appointment_tools  # CRITICAL: Add tools to context
-)
-
-# 6. Add context aggregator to pipeline
-context_aggregator = llm.create_context_aggregator(context)
-pipeline = Pipeline([
-    transport.input(),
-    context_aggregator.user(),      # REQUIRED for function calling
-    llm,
-    transport.output(),
-    context_aggregator.assistant()  # REQUIRED for function calling
-])
-```
-
-#### ❌ **WRONG: Text Interception (Doesn't Work!)**
-```python
-# This FAILS with Gemini Live - audio-to-audio pipeline doesn't emit TextFrames
-class EmailProcessor(FrameProcessor):
-    async def process_frame(self, frame, direction):
-        if isinstance(frame, TextFrame):  # This never happens!
-            if "confirmed" in frame.text:
-                send_email()  # Never triggered
-```
-
-**Why Text Interception Fails**: Gemini Live is an audio-to-audio pipeline that bypasses text frames entirely.
-
-### 📅 **Date Interpretation for Appointment Booking**
-
-#### ✅ **CORRECT: Provide Current Date Context**
-```python
-from datetime import datetime, timedelta
-
 system_instruction=f"""
-CURRENT DATE CONTEXT:
-Today's date is: {datetime.now().strftime('%Y-%m-%d')} ({datetime.now().strftime('%A, %B %d, %Y')})
-
-DATE INTERPRETATION GUIDELINES:
-- "today" = {datetime.now().strftime('%Y-%m-%d')}
-- "tomorrow" = {(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')}
-- "day after tomorrow" = {(datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')}
-- Always convert dates to YYYY-MM-DD format when calling appointment functions
-- If patient says relative dates like "tomorrow", convert to exact dates
-
-APPOINTMENT BOOKING PROCESS:
-4. Collect preferred date/time - ALWAYS convert relative dates to YYYY-MM-DD format
+Today's date: {datetime.now().strftime('%Y-%m-%d')}
+"tomorrow" = {(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')}
+ALWAYS convert relative dates to YYYY-MM-DD format for functions.
 """
 ```
 
-#### ❌ **WRONG: No Date Context**
-```python
-# Without current date context, AI books wrong dates
-system_instruction="Book appointments..."  # AI doesn't know what "tomorrow" means
-```
-
-**Result**: Patient says "tomorrow" → AI books appointment for random past date
-
-### Windows Compatibility
-```python
-# ✅ CORRECT: Windows-compatible runner
-runner = PipelineRunner(handle_sigint=False)  # For Windows
-
-# ❌ WRONG: Default causes signal errors on Windows
-runner = PipelineRunner()  # Fails on Windows
-```
+**Function Calling (ONLY method for external actions)**:
+- ✅ DO: Use function schemas + tools + context aggregators
+- ❌ DON'T: Text interception (doesn't work with Gemini Live audio pipeline)
 
 ## Production Deployment
+**Docker**: Multi-stage builds, health checks, non-root user
+**Config**: Production API keys, CORS, metrics, session limits
+**Monitoring**: `/health` endpoint, JSON logs, auto cleanup
 
-### Docker Production
-```dockerfile
-# Multi-stage build optimized for production
-# Non-root user for security
-# Health checks enabled
-# Environment variable configuration
-```
+## 🔐 OAuth2 Authentication
 
-### Environment Setup
-- Set production API keys
-- Configure CORS origins
-- Enable metrics collection
-- Set appropriate session limits
-- Configure logging levels
+**Critical Issue**: Single token with ALL scopes needed in BOTH locations
 
-### Monitoring
-- Health check endpoint for load balancers
-- Structured JSON logs for log aggregation
-- Metrics endpoint for monitoring systems
-- Session cleanup automation
-
-## 🔐 OAuth2 Authentication & Token Management
-
-### Overview
-The voice agent uses Google OAuth2 authentication for accessing Gmail and Calendar APIs. This section documents critical lessons learned during implementation and best practices for token management.
-
-### ⚡ Quick Start Guide
-
-#### 1. Authentication Setup
 ```bash
-# 1. Place your Google OAuth2 credentials file
-cp your-credentials.json server/gclientsec.json.json
+# Setup
+cp credentials.json server/gclientsec.json.json
+cd server/src && python gmail_service.py  # Triggers OAuth
+cp google_token.pickle ../google_token.pickle  # Copy to both locations
 
-# 2. Run any Google service to trigger OAuth flow
-cd server/src
-python gmail_service.py  # This will open browser for authentication
-
-# 3. Verify token has all required scopes
-python -c "
-import pickle, requests
-with open('google_token.pickle', 'rb') as f:
-    creds = pickle.load(f)
-response = requests.get(f'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={creds.token}')
-scopes = response.json().get('scope', '').split()
-print(f'Token has {len(scopes)} scopes:')
-for scope in scopes: print(f'  - {scope}')
-"
-```
-
-### 🔧 Authentication Architecture
-
-#### Required Google API Scopes
-```python
+# Required scopes
 SCOPES = [
-    'https://www.googleapis.com/auth/gmail.send',         # Send emails
-    'https://www.googleapis.com/auth/gmail.readonly',     # Read Gmail profile
-    'https://www.googleapis.com/auth/calendar',           # Access Calendar
-    'https://www.googleapis.com/auth/calendar.events'     # Create/manage events
+    'gmail.send', 'gmail.readonly',  # Email
+    'calendar', 'calendar.events'    # Calendar
 ]
 ```
 
-#### Token File Management
-- **Location**: `server/src/google_token.pickle` AND `server/google_token.pickle`
-- **Scope**: Single token with ALL required permissions
-- **Sharing**: Both Gmail and Calendar services use the same token
-- **Persistence**: Token refreshes automatically when expired
+**Common Problem**: Voice agent runs from `server/` but token only in `server/src/`
+**Solution**: Keep identical complete tokens in both `server/` and `server/src/`
 
-### 🚨 Critical Lessons Learned
-
-#### ❌ **Common Pitfall: Multiple Token Files**
-**Problem**: Creating separate tokens for Gmail and Calendar leads to scope conflicts.
-
+**Fix Auth Errors**:
 ```bash
-# BAD: Different tokens with different scopes
-server/google_token.pickle          # Only Gmail scopes (2 scopes)
-server/src/google_token.pickle      # Gmail + Calendar scopes (4 scopes)
-```
-
-**Symptom**: Gmail works but Calendar fails with "insufficient authentication scopes"
-
-**Root Cause**: Voice agent runs from `server/` directory, finds incomplete token
-
-#### ✅ **Solution: Single Token Strategy**
-```bash
-# GOOD: Same complete token in both locations
-server/google_token.pickle          # Gmail + Calendar scopes (4 scopes)
-server/src/google_token.pickle      # Gmail + Calendar scopes (4 scopes)
-
-# Copy command to sync tokens
-cp server/src/google_token.pickle server/google_token.pickle
-```
-
-#### 🔄 **Token Refresh Issues**
-**Problem**: Token refresh doesn't add new scopes automatically
-
-**Solution**: Delete token file and re-authenticate when adding new scopes:
-```bash
-rm server/src/google_token.pickle
-rm server/google_token.pickle
-python gmail_service.py  # Triggers fresh OAuth with all scopes
-```
-
-#### 🔧 **Critical OAuth Fix: Missing Refresh Token Fields**
-**Problem**: Token missing required fields for refresh operations
-
-**Error Message**:
-```
-The credentials do not contain the necessary fields need to refresh the access token.
-You must specify refresh_token, token_uri, client_id, and client_secret.
-```
-
-**Root Cause**: OAuth token created without proper refresh token configuration
-
-**Solution**: Complete token recreation with proper OAuth flow:
-```bash
-# 1. Remove all existing token files
-rm server/src/google_token.pickle
-rm server/google_token.pickle
-
-# 2. Create fresh token with all required fields
-cd server/src
-python -c "from googel_auth_manger import get_credentials; get_credentials()"
-
-# 3. Copy token to both locations
+# Delete all tokens and recreate fresh
+rm server/google_token.pickle server/src/google_token.pickle
+cd server/src && python -c "from googel_auth_manger import get_credentials; get_credentials()"
 cp google_token.pickle ../google_token.pickle
-
-# 4. Verify both services work
-python -c "
-from gmail_service import get_gmail_service
-from calendar_service import get_calendar_service
-
-gmail = get_gmail_service()
-calendar = get_calendar_service()
-
-print('Gmail:', 'SUCCESS' if gmail.get_user_profile().get('success') else 'FAILED')
-print('Calendar:', 'SUCCESS' if calendar.get_calendar_info().get('success') else 'FAILED')
-"
 ```
 
-### 📁 **File Structure & Dependencies**
+## 🌐 Google Services Integration
 
-```
-server/
-├── google_token.pickle                 # Complete token (voice agent uses this)
-├── gclientsec.json.json               # OAuth2 credentials file
-└── src/
-    ├── googel_auth_manger.py          # Central authentication manager
-    ├── gmail_service.py               # Gmail API service
-    ├── calendar_service.py            # Calendar API service
-    ├── appointment_functions.py       # Function calling with both services
-    └── google_token.pickle            # Complete token (manual tests use this)
-```
+**Adding New Services (Drive, Sheets, etc.)**:
+1. Plan ALL scopes upfront (adding later breaks tokens)
+2. Update `googel_auth_manger.py` with new scopes
+3. Delete all tokens: `rm server/google_token.pickle server/src/google_token.pickle`
+4. Recreate fresh token with all scopes
+5. Test all services before deployment
 
-### 🧪 **Testing Authentication**
-
-#### Verify Token Scopes
+**Pattern for All Google Services**:
 ```python
-import pickle, requests, os
-
-def check_token_scopes(token_path):
-    if not os.path.exists(token_path):
-        return f"❌ Token not found: {token_path}"
-
-    with open(token_path, 'rb') as f:
-        creds = pickle.load(f)
-
-    if not creds.valid:
-        return f"❌ Token invalid: {token_path}"
-
-    try:
-        response = requests.get(f'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={creds.token}')
-        scopes = response.json().get('scope', '').split()
-        required = ['gmail.send', 'gmail.readonly', 'calendar', 'calendar.events']
-
-        result = f"✅ Token valid: {token_path}\n"
-        result += f"   Scopes: {len(scopes)}/4 required\n"
-
-        for req in required:
-            has_scope = any(req in scope for scope in scopes)
-            status = "✅" if has_scope else "❌"
-            result += f"   {status} {req}\n"
-
-        return result
-    except Exception as e:
-        return f"❌ Token check failed: {e}"
-
-# Test both token locations
-print(check_token_scopes('server/google_token.pickle'))
-print(check_token_scopes('server/src/google_token.pickle'))
-```
-
-#### Test Both Services
-```python
-# Test Gmail service
-from gmail_service import get_gmail_service
-gmail = get_gmail_service()
-profile = gmail.get_user_profile()
-print(f"Gmail: {'✅' if profile.get('success') else '❌'}")
-
-# Test Calendar service
-from calendar_service import get_calendar_service
-calendar = get_calendar_service()
-info = calendar.get_calendar_info()
-print(f"Calendar: {'✅' if info.get('success') else '❌'}")
-```
-
-### 🛠️ **Troubleshooting Guide**
-
-#### Error: "Request had insufficient authentication scopes"
-```bash
-# 1. Check which token the service is using
-python -c "
-import os
-print('Voice agent working directory:', os.getcwd())
-print('Token exists:', os.path.exists('google_token.pickle'))
-"
-
-# 2. Check token scopes (use verification script above)
-
-# 3. Copy complete token if needed
-cp src/google_token.pickle google_token.pickle
-
-# 4. If token is incomplete, delete and re-authenticate
-rm google_token.pickle src/google_token.pickle
-python src/gmail_service.py
-```
-
-#### Error: "Token refresh failed"
-```bash
-# Token corruption - force fresh authentication
-rm google_token.pickle src/google_token.pickle
-python src/calendar_service.py  # Will trigger OAuth flow
-```
-
-#### Working Directory Issues
-```python
-# Always use absolute paths in production
-import os
-TOKEN_FILE = os.path.join(os.path.dirname(__file__), "google_token.pickle")
-
-# Or ensure both locations have complete tokens
-# server/google_token.pickle (for voice agent)
-# server/src/google_token.pickle (for manual testing)
-```
-
-### 🎯 **Best Practices**
-
-#### ✅ **DO**
-- Use single token file with ALL required scopes
-- Keep tokens synchronized between `server/` and `server/src/`
-- Test both Gmail and Calendar services after authentication
-- Use absolute paths for token files in production
-- Check token scopes before deploying
-
-#### ❌ **DON'T**
-- Create separate tokens for different services
-- Assume token refresh adds new scopes
-- Hardcode relative paths for critical files
-- Skip scope verification after authentication
-- Commit token files to version control
-
-### 📋 **Pre-Deployment Checklist**
-- [ ] OAuth2 credentials file in correct location
-- [ ] Token file exists in both `server/` and `server/src/`
-- [ ] Token has all 4 required scopes (Gmail + Calendar)
-- [ ] Gmail service test passes
-- [ ] Calendar service test passes
-- [ ] Appointment function creates both email and calendar event
-- [ ] Voice agent runs without authentication errors
-
-## 🌐 Google Services Integration Guidelines
-
-### Overview
-This section provides comprehensive guidelines for integrating Google services (Gmail, Calendar, Drive, etc.) based on lessons learned during OAuth implementation and troubleshooting.
-
-### 🚀 **Quick Integration Checklist**
-
-When adding any new Google service, follow this proven methodology:
-
-#### 1. **Scope Planning** (Before Coding)
-```python
-# Always plan ALL scopes upfront - adding later causes token conflicts
-SCOPES = [
-    'https://www.googleapis.com/auth/gmail.send',         # Existing
-    'https://www.googleapis.com/auth/gmail.readonly',     # Existing
-    'https://www.googleapis.com/auth/calendar',           # Existing
-    'https://www.googleapis.com/auth/calendar.events',    # Existing
-    'https://www.googleapis.com/auth/drive.file',         # NEW: If adding Drive
-    'https://www.googleapis.com/auth/sheets',             # NEW: If adding Sheets
-]
-```
-
-#### 2. **Service Creation Pattern**
-```python
-# Use this template for any new Google service
+# Standard service pattern
 class NewGoogleService:
     def __init__(self):
-        self.service = None
-        self._initialize_service()
+        creds = get_credentials()  # Central auth manager
+        self.service = build('servicename', 'version', credentials=creds)
 
-    def _initialize_service(self):
-        """Standard initialization pattern"""
-        try:
-            creds = get_credentials()  # Uses central auth manager
-            self.service = build('servicename', 'version', credentials=creds)
-
-            # Test the service immediately
-            test_result = self.service.about().get().execute()  # Adjust per service
-            logger.info(f"Service initialized: {test_result.get('name', 'Unknown')}")
-
-        except Exception as e:
-            logger.error(f"Failed to initialize service: {str(e)}")
-            raise
-
-    def test_connection(self) -> Dict[str, Any]:
-        """Always include a test method"""
-        try:
-            # Service-specific test call
-            result = self.service.about().get().execute()
-            return {'success': True, 'data': result}
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
+    def test_connection(self):
+        # Always include test method
+        return {'success': True/False}
 ```
 
-#### 3. **Token Management Protocol**
-```bash
-# CRITICAL: When adding new scopes, ALWAYS follow this sequence:
-
-# Step 1: Update SCOPES in googel_auth_manger.py
-# Step 2: Delete ALL existing tokens
-rm server/google_token.pickle server/src/google_token.pickle
-
-# Step 3: Create fresh token with ALL scopes
-cd server/src
-python -c "from googel_auth_manger import get_credentials; get_credentials()"
-
-# Step 4: Copy to both locations
-cp google_token.pickle ../google_token.pickle
-
-# Step 5: Test ALL services
-python -c "
-from gmail_service import get_gmail_service
-from calendar_service import get_calendar_service
-# Add tests for new services here
-
-print('All services tested successfully')
-"
-```
-
-### 🔧 **Common Google Services Integration Patterns**
-
-#### **Gmail API Integration**
-```python
-# Proven pattern for email operations
-def send_email(to: str, subject: str, body: str, is_html: bool = False):
-    try:
-        service = build('gmail', 'v1', credentials=get_credentials())
-
-        message = MIMEText(body, 'html' if is_html else 'plain')
-        message['to'] = to
-        message['subject'] = subject
-
-        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-
-        result = service.users().messages().send(
-            userId='me',
-            body={'raw': raw_message}
-        ).execute()
-
-        return {'success': True, 'message_id': result['id']}
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-```
-
-#### **Google Calendar API Integration**
-```python
-# Proven pattern for calendar operations
-def create_calendar_event(summary: str, start_time: datetime, end_time: datetime):
-    try:
-        service = build('calendar', 'v3', credentials=get_credentials())
-
-        event = {
-            'summary': summary,
-            'start': {
-                'dateTime': start_time.isoformat(),
-                'timeZone': 'Asia/Kolkata',  # Always specify timezone
-            },
-            'end': {
-                'dateTime': end_time.isoformat(),
-                'timeZone': 'Asia/Kolkata',
-            },
-            'reminders': {
-                'useDefault': False,
-                'overrides': [
-                    {'method': 'email', 'minutes': 24 * 60},
-                    {'method': 'popup', 'minutes': 10},
-                ],
-            },
-        }
-
-        result = service.events().insert(calendarId='primary', body=event).execute()
-        return {'success': True, 'event_id': result['id']}
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-```
-
-#### **Google Drive API Integration**
-```python
-# Template for Drive integration (if needed)
-def upload_to_drive(file_path: str, folder_id: str = None):
-    try:
-        service = build('drive', 'v3', credentials=get_credentials())
-
-        file_metadata = {
-            'name': os.path.basename(file_path),
-            'parents': [folder_id] if folder_id else []
-        }
-
-        media = MediaFileUpload(file_path)
-
-        result = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id,name,webViewLink'
-        ).execute()
-
-        return {'success': True, 'file_id': result['id'], 'link': result['webViewLink']}
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-```
-
-### ⚠️ **Critical Don'ts for Google Services**
-
-#### ❌ **Never Do These**
-1. **Create separate OAuth tokens for different services**
-   ```python
-   # BAD: Multiple tokens
-   gmail_creds = get_gmail_credentials()  # ❌ Wrong approach
-   calendar_creds = get_calendar_credentials()  # ❌ Wrong approach
-
-   # GOOD: Single token with all scopes
-   creds = get_credentials()  # ✅ Correct approach
-   ```
-
-2. **Add scopes to existing tokens**
-   ```python
-   # BAD: Trying to add scopes to existing token
-   # This will fail with "insufficient scopes" error
-
-   # GOOD: Delete token and recreate with all scopes
-   ```
-
-3. **Ignore timezone handling**
-   ```python
-   # BAD: No timezone specified
-   'start': {'dateTime': start_time.isoformat()}  # ❌ Timezone issues
-
-   # GOOD: Always specify timezone
-   'start': {'dateTime': start_time.isoformat(), 'timeZone': 'Asia/Kolkata'}  # ✅
-   ```
-
-4. **Skip error handling**
-   ```python
-   # BAD: No error handling
-   service.events().insert(calendarId='primary', body=event).execute()  # ❌
-
-   # GOOD: Comprehensive error handling
-   try:
-       result = service.events().insert(calendarId='primary', body=event).execute()
-       return {'success': True, 'data': result}
-   except HttpError as e:
-       return {'success': False, 'error': f'API Error: {e}'}
-   ```
-
-### 🧪 **Testing Strategy for Google Services**
-
-#### **Service Health Check Pattern**
-```python
-def test_all_google_services():
-    """Test all Google services to ensure proper integration"""
-    results = {}
-
-    # Test Gmail
-    try:
-        gmail = get_gmail_service()
-        results['gmail'] = gmail.get_user_profile().get('success', False)
-    except Exception as e:
-        results['gmail'] = f"Error: {e}"
-
-    # Test Calendar
-    try:
-        calendar = get_calendar_service()
-        results['calendar'] = calendar.get_calendar_info().get('success', False)
-    except Exception as e:
-        results['calendar'] = f"Error: {e}"
-
-    # Add more services as needed
-
-    return results
-```
-
-#### **Integration Test for Function Calling**
-```python
-def test_appointment_integration():
-    """Test complete appointment flow with both email and calendar"""
-    try:
-        # Test email sending
-        email_result = send_appointment_email_test()
-
-        # Test calendar creation
-        calendar_result = create_calendar_event_test()
-
-        # Test both together
-        both_success = email_result.get('success') and calendar_result.get('success')
-
-        return {
-            'email': email_result.get('success'),
-            'calendar': calendar_result.get('success'),
-            'integration': both_success
-        }
-    except Exception as e:
-        return {'error': str(e)}
-```
-
-### 📋 **Google Services Development Checklist**
-
-Before deploying any Google service integration:
-
-- [ ] **Scope Planning**: All required scopes identified upfront
-- [ ] **Single Token**: One OAuth token for all services
-- [ ] **Error Handling**: Comprehensive try/catch blocks
-- [ ] **Timezone Handling**: Explicit timezone specification
-- [ ] **Test Methods**: Health check for each service
-- [ ] **Integration Tests**: Cross-service functionality tested
-- [ ] **Token Backup**: Token files in both server locations
-- [ ] **Documentation**: Service patterns documented
-- [ ] **Rate Limiting**: API rate limits considered
-- [ ] **Security**: No credentials in code or git
-
-### 🎯 **Future Google Service Additions**
-
-When adding new Google services (Sheets, Drive, Photos, etc.):
-
-1. **Plan scopes** before writing any code
-2. **Update `googel_auth_manger.py`** with new scopes
-3. **Delete all tokens** and recreate fresh
-4. **Follow service creation pattern** shown above
-5. **Add comprehensive tests** for the new service
-6. **Update this documentation** with new patterns
-
-This methodology ensures smooth integration without the OAuth issues we encountered during development.
+**Critical Rules**:
+- ❌ Never create separate tokens for different services
+- ❌ Never add scopes to existing tokens
+- ✅ Always specify timezone in Calendar events
+- ✅ Always use comprehensive error handling
 
 ## Future Enhancements
+**Planned**: JWT auth, rate limiting, database integration, load balancing, metrics dashboard
+**Scalability**: Multi-instance deployment, Redis sessions, conversation logging, multi-language
 
-### Planned Features
-- **Authentication** - JWT-based session authentication
-- **Rate Limiting** - API rate limiting and abuse prevention
-- **Database Integration** - Session persistence and analytics
-- **Load Balancing** - Multi-instance deployment support
-- **Metrics Dashboard** - Real-time monitoring interface
+## Coding Guidelines
 
-### Scalability
-- **Horizontal Scaling** - Multiple server instances
-- **Session Persistence** - Redis-based session storage
-- **Audio Recording** - Conversation logging and playback
-- **Multi-language Support** - International voice models
+**CRITICAL: Windows Unicode/Encoding Rules**:
+- NEVER use Unicode characters (emojis, checkmarks, crosses) in Python code or print statements
+- Windows cmd/console has encoding issues with Unicode characters like ✅ ❌ 🎉
+- Always use plain text: "SUCCESS:", "ERROR:", "WARNING:" instead of emoji symbols
+- This prevents UnicodeEncodeError crashes that waste time debugging
 
-## License & Credits
+**Function Call Architecture (Pipecat + Gemini Live)**:
+- ALWAYS use async function handlers with FunctionCallParams: `async def handler(params: FunctionCallParams)`
+- NEVER use sync wrappers for async handlers - causes "takes 1 argument but 6 were given" errors
+- ALWAYS register with: `llm.register_function(name, async_handler)`
+- Function calling is the ONLY way to trigger external actions - text interception doesn't work
 
-### Technologies Used
-- **Pipecat AI** - Voice agent framework
-- **Google Gemini Live** - Unified voice processing
-- **React** - Frontend framework
-- **FastAPI** - Python web framework
-- **WebRTC** - Real-time communication
+**Data Type Consistency**:
+- CallLogger.log_call() expects Dict, not CallRecord object - convert before calling
+- Always check expected input types for existing functions before calling
+- Use dataclasses for structured data, dicts for legacy interfaces
 
-### API Credits
-- **Gemini API Key**: your_gemini_api_key_here
-- **Rate Limits**: Monitor usage in Google AI Studio
-- **Billing**: Pay-per-use model for Gemini Live API
+**Google Services Integration**:
+- ALWAYS use single shared credentials across all Google services (Gmail/Calendar/Sheets)
+- NEVER create separate tokens - breaks OAuth scope management
+- Use absolute paths for credential files, not relative paths
+- Always test sheet structure exists before writing data
 
----
+**Error Handling Patterns**:
+```python
+# CORRECT: Non-blocking error handling
+try:
+    result = some_operation()
+    logger.info("SUCCESS: Operation completed")
+except Exception as e:
+    logger.error(f"ERROR: Operation failed: {e}")
+    # Continue execution, don't crash entire session
+```
 
-*This project demonstrates a complete voice agent implementation with modern web technologies, self-hosted infrastructure, and production-ready deployment capabilities.*
+**Server Management**:
+- NEVER start servers automatically in code - always ask user first
+- User controls when to start/stop servers to see logs
+- Close background servers when done testing
+
+**Path Handling**:
+- Use pathlib for cross-platform paths: `Path(__file__).parent.parent`
+- Avoid hardcoded relative paths like "../../file.json"
+- Always verify file existence before operations
+
+**Frontend Integration**:
+- Backend changes shouldn't break frontend connections
+- Test /health endpoint after backend changes
+- Keep consistent port configurations (8090 for web, 8091 for Twilio)
+
+**Example**:
+```python
+# WRONG - causes Windows encoding errors
+print("✅ Success!")
+print("❌ Failed!")
+
+# CORRECT - works on all platforms
+print("SUCCESS: Operation completed!")
+print("ERROR: Operation failed!")
+```
+
+## Recent Enhancements & Fixes
+
+### Business Process Flow Implementation ✅
+- **Fixed availability confirmation conflict**: Implemented proper two-step booking process
+- **Enhanced system instructions**: Clear function calling sequence (check availability → book appointment)
+- **Session-aware function calling**: Real-time call record updates during conversations
+- **Customer detection logic**: Multi-tier identification (local memory → Google Sheets → new customer)
+
+### Critical Function Call Pattern ✅
+```python
+# CORRECT Implementation (Fixed)
+1. check_appointment_availability(date, time)  # Verify slot availability
+2. book_appointment(patient_data)             # Complete booking process
+
+# Previous Issue (Resolved)
+Direct booking without availability checking caused conflicts
+```
+
+### Data Management Improvements ✅
+- **Complete call logging**: All patient information now captured during conversations
+- **Dual storage redundancy**: CSV + Google Sheets for data persistence
+- **Automatic customer recognition**: Personalized experience for returning patients
+- **Real-time session tracking**: Live updates to call records as conversation progresses
+
+### System Stability ✅
+- **Enhanced error handling**: Graceful fallbacks for all function calls
+- **Consistent system instructions**: Aligned with enhanced function capabilities
+- **Proper OAuth scoping**: Single token for all Google services
+- **Windows compatibility**: Signal handling and path resolution fixes
+
+## Credits
+**Tech Stack**: Pipecat AI + Gemini Live + React + FastAPI + WebRTC
+**APIs**: Gemini Live (pay-per-use), Gmail, Calendar, Twilio Voice

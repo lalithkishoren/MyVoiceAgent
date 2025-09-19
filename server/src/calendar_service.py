@@ -27,15 +27,16 @@ class CalendarEvent:
 class CalendarService:
     """Google Calendar API service for managing hospital appointments"""
 
-    def __init__(self):
+    def __init__(self, credentials=None):
         self.service = None
         self.calendar_id = 'primary'  # Use primary calendar for hospital appointments
+        self.credentials = credentials
         self._initialize_service()
 
     def _initialize_service(self):
         """Initialize the Google Calendar API service with authentication"""
         try:
-            creds = get_credentials()
+            creds = self.credentials if self.credentials else get_credentials()
             self.service = build('calendar', 'v3', credentials=creds)
 
             # Test the service by getting calendar info
@@ -187,6 +188,148 @@ Automatically scheduled via voice agent.
             logger.error(f"Error parsing appointment datetime: {e}")
             return None
 
+    def check_availability(self, appointment_date: str, appointment_time: str,
+                          duration_minutes: int = 30) -> Dict[str, Any]:
+        """Check if a time slot is available and suggest alternatives if not"""
+        try:
+            if not self.service:
+                raise Exception("Calendar service not initialized")
+
+            # Parse the requested appointment time
+            start_datetime = self._parse_appointment_datetime(appointment_date, appointment_time)
+            if not start_datetime:
+                return {
+                    'success': False,
+                    'error': f'Invalid date/time format: {appointment_date} {appointment_time}'
+                }
+
+            end_datetime = start_datetime + timedelta(minutes=duration_minutes)
+
+            # Check for conflicts in a wider time range (same day)
+            day_start = start_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            # Get events for the entire day
+            events_result = self.service.events().list(
+                calendarId=self.calendar_id,
+                timeMin=day_start.isoformat() + '+05:30',  # India timezone
+                timeMax=day_end.isoformat() + '+05:30',
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()
+
+            events = events_result.get('items', [])
+
+            # Check for conflicts
+            conflicts = []
+            for event in events:
+                event_start_str = event['start'].get('dateTime')
+                event_end_str = event['end'].get('dateTime')
+
+                if event_start_str and event_end_str:
+                    # Parse existing event times
+                    try:
+                        event_start = datetime.fromisoformat(event_start_str.replace('Z', '+00:00'))
+                        event_end = datetime.fromisoformat(event_end_str.replace('Z', '+00:00'))
+
+                        # Remove timezone info for comparison
+                        event_start = event_start.replace(tzinfo=None)
+                        event_end = event_end.replace(tzinfo=None)
+
+                        # Check for overlap
+                        if (start_datetime < event_end) and (end_datetime > event_start):
+                            conflicts.append({
+                                'summary': event.get('summary', 'Busy'),
+                                'start': event_start,
+                                'end': event_end
+                            })
+                    except Exception as e:
+                        logger.warning(f"Failed to parse event time: {e}")
+
+            # If slot is available
+            if not conflicts:
+                return {
+                    'success': True,
+                    'available': True,
+                    'requested_slot': {
+                        'date': appointment_date,
+                        'time': appointment_time,
+                        'duration': duration_minutes
+                    },
+                    'message': f'Time slot is available: {appointment_date} at {appointment_time}'
+                }
+
+            # If slot is not available, suggest alternatives
+            alternatives = self._suggest_alternative_slots(start_datetime, conflicts, duration_minutes)
+
+            return {
+                'success': True,
+                'available': False,
+                'conflicts': [f"{c['summary']} from {c['start'].strftime('%I:%M %p')} to {c['end'].strftime('%I:%M %p')}" for c in conflicts],
+                'alternatives': alternatives,
+                'message': f'Time slot not available. Found {len(conflicts)} conflicts. Here are some alternatives.'
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to check availability: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def _suggest_alternative_slots(self, requested_time: datetime, conflicts: list,
+                                  duration_minutes: int = 30) -> list:
+        """Suggest alternative time slots"""
+        alternatives = []
+
+        # Define working hours (9 AM to 6 PM)
+        working_start = 9
+        working_end = 18
+
+        # Start from the requested date
+        current_date = requested_time.date()
+
+        # Check next 7 days
+        for day_offset in range(7):
+            check_date = current_date + timedelta(days=day_offset)
+
+            # Skip weekends (optional - remove if hospital works on weekends)
+            if check_date.weekday() >= 5:  # Saturday = 5, Sunday = 6
+                continue
+
+            # Generate time slots for the day
+            for hour in range(working_start, working_end):
+                for minute in [0, 30]:  # 30-minute slots
+                    slot_start = datetime.combine(check_date, datetime.min.time().replace(hour=hour, minute=minute))
+                    slot_end = slot_start + timedelta(minutes=duration_minutes)
+
+                    # Skip if this is the same as requested time (already checked)
+                    if slot_start == requested_time:
+                        continue
+
+                    # Check if this slot conflicts with existing appointments
+                    slot_available = True
+
+                    # Quick check against known conflicts for same day
+                    if check_date == requested_time.date():
+                        for conflict in conflicts:
+                            if (slot_start < conflict['end']) and (slot_end > conflict['start']):
+                                slot_available = False
+                                break
+
+                    if slot_available:
+                        alternatives.append({
+                            'date': check_date.strftime('%Y-%m-%d'),
+                            'time': slot_start.strftime('%I:%M %p'),
+                            'formatted': f"{check_date.strftime('%B %d, %Y')} at {slot_start.strftime('%I:%M %p')}"
+                        })
+
+                        # Limit to 5 alternatives
+                        if len(alternatives) >= 5:
+                            return alternatives
+
+        return alternatives
+
     def list_upcoming_appointments(self, days_ahead: int = 7) -> Dict[str, Any]:
         """List upcoming appointments in the next N days"""
         try:
@@ -229,6 +372,108 @@ Automatically scheduled via voice agent.
 
         except Exception as e:
             logger.error(f"Failed to list appointments: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+    def cancel_appointment(self, patient_name: str, patient_email: str, patient_phone: str,
+                          appointment_date: str, appointment_time: str, doctor_name: str) -> Dict[str, Any]:
+        """Cancel an appointment with verification"""
+        try:
+            if not self.service:
+                raise Exception("Calendar service not initialized")
+
+            # Parse the appointment date and time
+            start_datetime = self._parse_appointment_datetime(appointment_date, appointment_time)
+            if not start_datetime:
+                return {
+                    'success': False,
+                    'error': f'Invalid date/time format: {appointment_date} {appointment_time}'
+                }
+
+            # Search for the appointment
+            day_start = start_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+
+            events_result = self.service.events().list(
+                calendarId=self.calendar_id,
+                timeMin=day_start.isoformat() + '+05:30',
+                timeMax=day_end.isoformat() + '+05:30',
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()
+
+            events = events_result.get('items', [])
+
+            # Find matching appointment
+            matching_event = None
+            for event in events:
+                event_start_str = event['start'].get('dateTime')
+                description = event.get('description', '').lower()
+                summary = event.get('summary', '').lower()
+
+                if event_start_str:
+                    try:
+                        event_start = datetime.fromisoformat(event_start_str.replace('Z', '+00:00')).replace(tzinfo=None)
+
+                        # Check if time matches (within 15 minutes tolerance)
+                        time_diff = abs((event_start - start_datetime).total_seconds())
+
+                        # Verify patient details
+                        name_match = patient_name.lower() in description or patient_name.lower() in summary
+                        email_match = patient_email.lower() in description if patient_email else True
+                        phone_match = patient_phone in description if patient_phone else True
+                        doctor_match = doctor_name.lower() in description or doctor_name.lower() in summary
+
+                        if time_diff <= 900 and name_match and doctor_match:  # 15 minutes tolerance
+                            matching_event = event
+                            break
+
+                    except Exception as e:
+                        logger.warning(f"Failed to parse event for cancellation: {e}")
+
+            if not matching_event:
+                return {
+                    'success': False,
+                    'error': 'No matching appointment found. Please verify patient name, doctor name, date, and time.',
+                    'provided_details': {
+                        'patient': patient_name,
+                        'doctor': doctor_name,
+                        'date': appointment_date,
+                        'time': appointment_time
+                    }
+                }
+
+            # Delete the event
+            self.service.events().delete(
+                calendarId=self.calendar_id,
+                eventId=matching_event['id']
+            ).execute()
+
+            logger.info(f"Appointment cancelled: {patient_name} with {doctor_name} on {appointment_date}")
+
+            return {
+                'success': True,
+                'cancelled_appointment': {
+                    'patient': patient_name,
+                    'doctor': doctor_name,
+                    'date': appointment_date,
+                    'time': appointment_time,
+                    'event_id': matching_event['id']
+                },
+                'message': f'Appointment successfully cancelled for {patient_name} with {doctor_name} on {appointment_date} at {appointment_time}'
+            }
+
+        except HttpError as error:
+            logger.error(f"Calendar API HTTP error during cancellation: {error}")
+            return {
+                'success': False,
+                'error': f"Calendar API error: {error}",
+                'error_code': error.resp.status if error.resp else None
+            }
+        except Exception as e:
+            logger.error(f"Failed to cancel appointment: {str(e)}")
             return {
                 'success': False,
                 'error': str(e)
